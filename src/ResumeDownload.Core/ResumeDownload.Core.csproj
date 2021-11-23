@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>$(AspNetCoreTargetFramework)</TargetFramework>
     <PackageId>Resume.Download</PackageId>
-    <Version>1.0.0-alpha</Version>
+    <Version>1.0.1-alpha</Version>
     <Authors>Jeffcky</Authors>
     <Description>.NET Core、ResumeDownload</Description>
     <RepositoryUrl>https://github.com/wangpengxpy/ResumeDownload</RepositoryUrl>
