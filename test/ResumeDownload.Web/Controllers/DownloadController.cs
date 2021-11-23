@@ -51,7 +51,7 @@ namespace ResumeDownload.Web.Controllers
         [HttpPost]
         public void Pause()
         {
-            _resumeDownload.Pause("mongo.zip");
+            _resumeDownload.Pause("file.zip");
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace ResumeDownload.Web.Controllers
         [HttpPost]
         public void Continue()
         {
-            _resumeDownload.Continue("mongo.zip");
+            _resumeDownload.Continue("file.zip");
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace ResumeDownload.Web.Controllers
         [HttpPost]
         public void Cancell()
         {
-            _resumeDownload.Cancell("mongo.zip");
+            _resumeDownload.Cancell("file.zip");
         }
 
         private void Progress_ProgressChanged(object sender,
