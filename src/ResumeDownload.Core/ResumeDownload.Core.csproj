@@ -8,6 +8,7 @@
     <Description>.NET Core、ResumeDownload</Description>
     <RepositoryUrl>https://github.com/wangpengxpy/ResumeDownload</RepositoryUrl>
     <PackageTags>.NET Core、ResumeDownload</PackageTags>
+    <PackageLicenseUrl>https://github.com/wangpengxpy/ResumeDownload</PackageLicenseUrl>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
