@@ -8,7 +8,6 @@
     <Description>.NET Core、ResumeDownload</Description>
     <RepositoryUrl>https://github.com/wangpengxpy/ResumeDownload</RepositoryUrl>
     <PackageTags>.NET Core ResumeDownload</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
