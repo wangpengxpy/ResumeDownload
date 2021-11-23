@@ -36,7 +36,7 @@ namespace ResumeDownload.Web.Controllers
 
             _ = Task.Run(() =>
               {
-                  _resumeDownload.Start("https://www.hnsdwl.com/mongo.zip", progress: progress);
+                  _resumeDownload.Start("https://wwww.demo.com/file.zip", progress: progress);
               });
 
             progress.ProgressChanged += Progress_ProgressChanged;
