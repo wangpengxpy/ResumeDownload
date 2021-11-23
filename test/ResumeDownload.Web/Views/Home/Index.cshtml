@@ -1,0 +1,89 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+
+<div class="text-center">
+    <h1 class="display-4">断点续传下载</h1>
+</div>
+
+<div class="form-horizontal" style="margin-top:80px;">
+    <div class="form-group" id="progress-group" style="display:none;">
+        <div id="size"></div>
+        <div class="progress  progress-striped">
+            <div id="progress" class="progress-bar progress-bar-success progress-bar-animated progress-bar-striped" role="progressbar"
+                 aria-valuemin="0" aria-valuemax="100">
+                <span id="percentage"></span>
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-4">
+            <input type="button" id="download" value="下载" class="btn btn-success" />
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-4">
+            <input type="button" id="pause" value="暂停" class="btn btn-danger" />
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-4">
+            <input type="button" id="continue" value="继续" class="btn btn-success" />
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-4">
+            <input type="button" id="cancell" value="取消" class="btn btn-danger" />
+        </div>
+    </div>
+</div>
+
+
+<script src="~/lib/jquery/dist/jquery.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+<script src="~/lib/signalr/signalr.js"></script>
+<script src="~/js/progress.js"></script>
+
+
+<script type="text/javascript">
+    $(function () {
+        $('#download').click(function () {
+            $('#progress-group').show();
+            $.ajax({
+                url: '/api/download/video',
+                type: "post",
+                cache: false,
+                contentType: "application/json"
+            });
+        });
+
+        $('#pause').click(function () {
+            $.ajax({
+                url: '/api/download/pause',
+                type: "post",
+                cache: false,
+                contentType: "application/json"
+            });
+        });
+
+        $('#continue').click(function () {
+            $.ajax({
+                url: '/api/download/continue',
+                type: "post",
+                cache: false,
+                contentType: "application/json"
+            });
+        });
+
+        $('#cancell').click(function () {
+            $.ajax({
+                url: '/api/download/cancell',
+                type: "post",
+                cache: false,
+                contentType: "application/json"
+            });
+        });
+    });
+</script>
