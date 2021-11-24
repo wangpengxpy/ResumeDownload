@@ -51,7 +51,7 @@ namespace ResumeDownload.Core
         /// <param name="outputFilePath"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        public void Start(string url, string outputFilePath = "", string id = "", IAsyncProgress<DownloadProgressChangedEventArgs> progress = null)
+        public Task Start(string url, string outputFilePath = "", string id = "", IAsyncProgress<DownloadProgressChangedEventArgs> progress = null)
         {
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             var _serviceProvider = scope.ServiceProvider;
@@ -67,8 +67,12 @@ namespace ResumeDownload.Core
             var stream = _resumeDownload.GetFileStream();
             if (stream == null)
             {
-                return;
+                return Task.CompletedTask;
             }
+
+            long totalBytesWritten = 0;
+
+            double byteWriteRate = 0.0;
 
             var readStack = _resumeDownload.ReadStack;
 
@@ -82,144 +86,118 @@ namespace ResumeDownload.Core
 
             bool downloadThrottle(int c) => writeQueue.Count > WRITE_QUEUE_DELAY_COUNT;
 
-            var pauseTasks = new List<ResumeDownloadTask>();
-
             var resumeDownloadTask = new ResumeDownloadTask();
 
-            for (int i = 0; i < numberOfThreads; i++)
+            Download.Workers.TryAdd(_resumeDownload.Id, resumeDownloadTask);
+
+            try
             {
-                _clientFactory ??= ((p) => _serviceProvider.GetRequiredService<IHttpClientRange>());
-
-                var childTask = new ResumeDownloadChildTask();
-
-                childTask.Task = Task.Run(() =>
+                for (int i = 0; i < numberOfThreads; i++)
                 {
-                    var _client = _clientFactory(_serviceProvider);
+                    _clientFactory ??= ((p) => _serviceProvider.GetRequiredService<IHttpClientRange>());
 
-                    readStack.TryPop(out int currentChunk);
-
-                    var delayThrottle = 1;
-
-                    try
+                    _ = Task.Run(async () =>
                     {
-                        while (currentChunk >= 0)
-                        {
-                            var part = new DownloadChunkedFilePart
-                            {
-                                FileOffset = _resumeDownload.GetChunkStart(currentChunk),
-                                Length = _resumeDownload.GetChunkSizeForCurrentChunk(currentChunk, chunkCount)
-                            };
+                        var _client = _clientFactory(_serviceProvider);
 
-                            #region  暂停、取消（待迭代版本）
-                            if (Download.Workers.TryGetValue(_resumeDownload.Id, out var pauseTasks))
+                        readStack.TryPop(out int currentChunk);
+
+                        var delayThrottle = 1;
+
+                        try
+                        {
+                            while (currentChunk >= 0)
                             {
-                                var pauseTask = pauseTasks.FirstOrDefault();
-                                if (pauseTask != null)
+                                var part = new DownloadChunkedFilePart
                                 {
-                                    if (pauseTask.IsPaused)
+                                    FileOffset = _resumeDownload.GetChunkStart(currentChunk),
+                                    Length = _resumeDownload.GetChunkSizeForCurrentChunk(currentChunk, chunkCount)
+                                };
+
+                                var cancellationTokenSource = resumeDownloadTask.CancellationTokenSource;
+
+                                await resumeDownloadTask.PauseTokenSource.Token.WaitWhilePausedAsync(cancellationTokenSource.Token);
+
+                                var response = await _client.DownloadChunk(part.FileOffset, part.Length);
+
+                                if (response != null && response.Successed)
+                                {
+                                    // 当前分片数
+                                    part.Chunk = currentChunk;
+                                    // 下载字节流
+                                    part.Content = response.Content;
+
+                                    // 下载对应写入队列
+                                    writeQueue.Enqueue(part);
+
+                                    // 下载成功，重置重试或异常下载阻塞次数
+                                    delayThrottle = 1;
+
+                                    // 下载成功，将当前分片数修改以便跳出循环
+                                    if (!readStack.TryPop(out currentChunk))
                                     {
-                                        continue;
+                                        currentChunk = -1;
                                     }
 
-                                    if (pauseTask.IsCancelled)
+                                    // 当前片数超出队列数量（下载过快，但还未来得及写入磁盘）延迟下载时间
+                                    while (downloadThrottle(currentChunk))
+                                    {
+                                        await Task.Delay(DWONLOAD_Throttle_DELAY);
+                                    }
+                                }
+                                else if (response == null || response.IsRetry)
+                                {
+                                    // 若读取异常或失败，则根据全局配置尝试重试
+                                    var sleepSecond = TimeSpan.FromSeconds(Math.Pow(2, delayThrottle));
+
+                                    await Task.Delay(sleepSecond);
+
+                                    delayThrottle++;
+
+                                    if (delayThrottle > _resumeDownload.MaxRetries)
                                     {
                                         break;
                                     }
                                 }
-                            }
-                            #endregion
-
-                            var response = _client.DownloadChunk(part.FileOffset, part.Length);
-
-                            if (response != null && response.Successed)
-                            {
-                                // 当前分片数
-                                part.Chunk = currentChunk;
-                                // 下载字节流
-                                part.Content = response.Content;
-
-                                // 下载对应写入队列
-                                writeQueue.Enqueue(part);
-
-                                // 下载成功，重置重试或异常下载阻塞次数
-                                delayThrottle = 1;
-
-                                // 下载成功，将当前分片数修改以便跳出循环
-                                if (!readStack.TryPop(out currentChunk))
-                                {
-                                    currentChunk = -1;
-                                }
-
-                                // 当前片数超出队列数量（下载过快，但还未来得及写入磁盘）延迟下载时间
-                                while (downloadThrottle(currentChunk))
-                                {
-                                    Task.Delay(DWONLOAD_Throttle_DELAY);
-                                }
-                            }
-                            else if (response == null || response.IsRetry)
-                            {
-                                // 若读取异常或失败，则根据全局配置尝试重试
-                                var sleepSecond = TimeSpan.FromSeconds(Math.Pow(2, delayThrottle));
-
-                                Task.Delay(sleepSecond);
-
-                                delayThrottle++;
-
-                                if (delayThrottle > _resumeDownload.MaxRetries)
+                                else
                                 {
                                     break;
                                 }
                             }
-                            else
-                            {
-                                break;
-                            }
                         }
-                    }
-                    catch (Exception ex) when (ex is IOException)
-                    {
-                        _logger.LogWarning($@"[{_resumeDownload.Id}] 
-                        {(ex.InnerException != null ? ex.InnerException.Message : ex.Message)}");
-
-                        _client.Dispose();
-                    }
-                    catch (Exception ex) when (ex is OperationCanceledException)
-                    {
-                        childTask.CancellationTokenSource.Dispose();
-                    }
-                    finally
-                    {
-                        if (currentChunk >= 0)
+                        catch (Exception ex) when (ex is IOException)
                         {
-                            readStack.Push(currentChunk);
-                        }
+                            _logger.LogWarning($@"【{_resumeDownload.Id}】 {(ex.InnerException != null ? ex.InnerException.Message : ex.Message)}");
 
-                        if (_client != null)
-                        {
                             _client.Dispose();
                         }
-                    }
+                        catch (Exception ex) when (ex is OperationCanceledException)
+                        {
+                            _logger.LogWarning($"【{_resumeDownload.Id}】 is cancelled");
+                        }
+                        finally
+                        {
+                            if (resumeDownloadTask.CancellationTokenSource.IsCancellationRequested)
+                            {
+                                resumeDownloadTask.CancellationTokenSource.Dispose();
+                            }
+                            else
+                            {
+                                if (currentChunk >= 0)
+                                {
+                                    readStack.Push(currentChunk);
+                                }
 
-                }, childTask.CancellationTokenSource.Token);
+                                if (_client != null)
+                                {
+                                    _client.Dispose();
+                                }
+                            }
+                        }
 
-                resumeDownloadTask.ChildTasks.Add(childTask);
-            }
+                    }, resumeDownloadTask.CancellationTokenSource.Token);
+                }
 
-            pauseTasks.Add(resumeDownloadTask);
-
-            Download.Workers.TryAdd(_resumeDownload.Id, pauseTasks);
-
-            WriteToFileStream(stream, chunksWritten, writeQueue, readStack);
-        }
-
-        private void WriteToFileStream(Stream stream, Dictionary<int, bool> chunksWritten, ConcurrentQueue<DownloadChunkedFilePart> writeQueue, ConcurrentStack<int> readStack)
-        {
-            long totalBytesWritten = 0;
-
-            double byteWriteRate = 0.0;
-
-            try
-            {
                 var watch = new Stopwatch();
                 watch.Start();
 
@@ -230,37 +208,41 @@ namespace ResumeDownload.Core
                 //循环将分片文件流写入磁盘文件
                 while (chunksWritten.Any(kvp => !kvp.Value))
                 {
+                    if (Download.Workers.TryGetValue(_resumeDownload.Id, out var cancelledTask))
+                    {
+                        if (cancelledTask.CancellationTokenSource.IsCancellationRequested)
+                        {
+                            chunksWritten = new Dictionary<int, bool>();
+
+                            writeQueue = new ConcurrentQueue<DownloadChunkedFilePart>();
+
+                            readStack = new ConcurrentStack<int>();
+
+                            if (_progress != null)
+                            {
+                                _progress.Report(new DownloadProgressChangedEventArgs(_resumeDownload.FileSize,
+                                ComputeProgressIndicator(0, _resumeDownload.FileSize), 0, 0, 0, 0, null, id, null, false, "任务已被取消"));
+                            }
+
+                            break;
+                        }
+                    }
+
                     while (writeQueue.TryDequeue(out DownloadChunkedFilePart part))
                     {
-                        #region 暂停、取消（待迭代版本）
-                        if (Download.Workers.TryGetValue(_resumeDownload.Id, out var tasks))
+                        if (Download.Workers.TryGetValue(_resumeDownload.Id, out var pasuseTask))
                         {
-                            var pauseTask = tasks.FirstOrDefault();
-                            var ispaused = pauseTask?.IsPaused;
-                            var iscancelled = pauseTask?.IsCancelled;
-                            if (ispaused.HasValue && ispaused.Value)
+                            if (pasuseTask.PauseTokenSource.Token.CanBePaused && pasuseTask.PauseTokenSource.IsPaused)
                             {
                                 readStack.Push(part.Chunk);
-                                _logger.LogDebug($"[{_resumeDownload.Id}] paused write chunk: {part.Chunk}");
+
+                                _logger.LogDebug($"【{_resumeDownload.Id}】 paused write chunk: {part.Chunk}");
+
                                 continue;
                             }
-
-                            if (iscancelled.HasValue && iscancelled.Value)
-                            {
-                                chunksWritten = new Dictionary<int, bool>();
-
-                                readStack.Clear();
-
-                                _logger.LogDebug($"[{_resumeDownload.Id}] cancelled write chunk: {part.Chunk}");
-
-                                Download.Workers.TryRemove(_resumeDownload.Id, out var _);
-
-                                break;
-                            }
                         }
-                        #endregion
 
-                        _logger.LogDebug($"[{_resumeDownload.Id}] writing chunk: {part.Chunk}");
+                        _logger.LogDebug($"【{_resumeDownload.Id}】 writing chunk: {part.Chunk}");
 
                         stream.Position = part.FileOffset;
 
@@ -309,7 +291,7 @@ namespace ResumeDownload.Core
             }
             catch (Exception ex)
             {
-                _logger.LogError($"[{_resumeDownload.Id}] Exception: downloading failed. Message：${ex.Message},StackTrace:{ex.StackTrace}");
+                _logger.LogError($"【{_resumeDownload.Id}】 Exception: downloading failed. Message：${ex.Message},StackTrace:{ex.StackTrace}");
 
                 if (_progress != null)
                 {
@@ -318,7 +300,7 @@ namespace ResumeDownload.Core
             }
             finally
             {
-                _logger.LogWarning($"[{_resumeDownload.Id}] autoClosing stream");
+                _logger.LogWarning($"【{_resumeDownload.Id}】 autoClosing stream");
 
                 if (_progress != null)
                 {
@@ -327,53 +309,45 @@ namespace ResumeDownload.Core
 
                 stream.Close();
             }
+
+            return Task.CompletedTask;
         }
 
         public void Continue(string id)
         {
-            if (!Download.Workers.TryGetValue(id, out var pauseTasks))
+            if (!Download.Workers.TryGetValue(id, out var resumeDownloadTask))
             {
                 return;
             }
 
-            var pauseTask = pauseTasks.FirstOrDefault();
-            if (pauseTask != null)
-            {
-                pauseTask.IsPaused = false;
-            }
+            resumeDownloadTask.PauseTokenSource.IsPaused = false;
         }
 
         public void Pause(string id)
         {
-            if (!Download.Workers.TryGetValue(id, out var pauseTasks))
+            if (!Download.Workers.TryGetValue(id, out var resumeDownloadTask))
             {
                 return;
             }
 
-            var pauseTask = pauseTasks.FirstOrDefault();
-            if (pauseTask != null)
-            {
-                pauseTask.IsPaused = true;
-            }
+            resumeDownloadTask.PauseTokenSource.IsPaused = true;
         }
 
         public void Cancell(string id)
         {
-            if (!Download.Workers.TryGetValue(id, out var pauseTasks))
+            if (!Download.Workers.TryGetValue(id, out var resumeDownloadTask))
             {
                 return;
             }
 
-            var pauseTask = pauseTasks.FirstOrDefault();
-            if (pauseTask != null)
+            try
             {
-                pauseTask.IsCancelled = true;
+                resumeDownloadTask.CancellationTokenSource.Cancel();
             }
-
-            pauseTask.ChildTasks.ForEach(task =>
+            catch (Exception ex) when(ex is ObjectDisposedException)
             {
-                task.CancellationTokenSource.Cancel();
-            });
+                _logger.LogWarning("任务已被取消");
+            }
         }
 
         private void ReportProgress(long totalBytesWritten, long byteWriteRate, string id, bool isFailed = false, string message = "")

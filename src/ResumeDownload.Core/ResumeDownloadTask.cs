@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ResumeDownload.Ext;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace ResumeDownload.Core
 {
@@ -9,14 +8,13 @@ namespace ResumeDownload.Core
     /// </summary>
     internal sealed class ResumeDownloadTask
     {
-        internal bool IsPaused { get; set; }
-        internal bool IsCancelled { get; set; }
-        internal List<ResumeDownloadChildTask> ChildTasks { get; set; } = new List<ResumeDownloadChildTask>();
-    }
-
-    internal sealed class ResumeDownloadChildTask
-    {
-        public Task Task { get; set; }
-        public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
+        /// <summary>
+        /// 暂停、继续令牌
+        /// </summary>
+        internal PauseTokenSource PauseTokenSource { get; set; } = new PauseTokenSource();
+        /// <summary>
+        /// 取消令牌
+        /// </summary>
+        internal CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace ResumeDownload.Core
+﻿using System.Threading.Tasks;
+
+namespace ResumeDownload.Core
 {
     /// <summary>
     /// 
@@ -13,7 +15,7 @@
         /// <param name="id">文件id</param>
         /// <param name="progress">文件id</param>
         /// <returns></returns>
-        void Start(string url, string outputFilePath = "", string id = "", IAsyncProgress<DownloadProgressChangedEventArgs> progress = null);
+        Task Start(string url, string outputFilePath = "", string id = "", IAsyncProgress<DownloadProgressChangedEventArgs> progress = null);
         /// <summary>
         /// 暂停下载
         /// </summary>

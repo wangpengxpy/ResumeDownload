@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
 
 namespace ResumeDownload.Core
 {
@@ -8,7 +7,7 @@ namespace ResumeDownload.Core
     /// </summary>
     public static class Download
     {
-        internal static ConcurrentDictionary<string, List<ResumeDownloadTask>> Workers { get; set; } =
-            new ConcurrentDictionary<string, List<ResumeDownloadTask>>();
+        internal static ConcurrentDictionary<string, ResumeDownloadTask> Workers { get; set; } =
+            new ConcurrentDictionary<string, ResumeDownloadTask>();
     }
 }

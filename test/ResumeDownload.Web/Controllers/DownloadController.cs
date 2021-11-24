@@ -30,14 +30,14 @@ namespace ResumeDownload.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult Video()
+        public IActionResult Start()
         {
             var progress = new AsyncProgress<DownloadProgressChangedEventArgs>();
 
-            _ = Task.Run(() =>
-              {
-                  _resumeDownload.Start("https://wwww.demo.com/file.zip", progress: progress);
-              });
+            _ = Task.Run(async () =>
+            {
+                await _resumeDownload.Start("https://www.hnsdwl.com/mongo.zip", progress: progress);
+            });
 
             progress.ProgressChanged += Progress_ProgressChanged;
 
@@ -51,7 +51,7 @@ namespace ResumeDownload.Web.Controllers
         [HttpPost]
         public void Pause()
         {
-            _resumeDownload.Pause("file.zip");
+            _resumeDownload.Pause("mongo.zip");
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace ResumeDownload.Web.Controllers
         [HttpPost]
         public void Continue()
         {
-            _resumeDownload.Continue("file.zip");
+            _resumeDownload.Continue("mongo.zip");
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace ResumeDownload.Web.Controllers
         [HttpPost]
         public void Cancell()
         {
-            _resumeDownload.Cancell("file.zip");
+            _resumeDownload.Cancell("mongo.zip");
         }
 
         private void Progress_ProgressChanged(object sender,

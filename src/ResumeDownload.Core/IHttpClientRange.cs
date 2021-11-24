@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace ResumeDownload.Core
 {
@@ -10,6 +11,6 @@ namespace ResumeDownload.Core
         /// <param name="start"></param>
         /// <param name="length"></param>
         /// <returns></returns>
-        HttpClientRangeResponse DownloadChunk(long start, long length);
+        Task<HttpClientRangeResponse> DownloadChunk(long start, long length);
     }
 }

@@ -52,7 +52,7 @@
         $('#download').click(function () {
             $('#progress-group').show();
             $.ajax({
-                url: '/api/download/video',
+                url: '/api/download/start',
                 type: "post",
                 cache: false,
                 contentType: "application/json"

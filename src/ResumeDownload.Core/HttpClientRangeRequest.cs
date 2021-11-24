@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 namespace ResumeDownload.Core
 {
@@ -32,7 +33,7 @@ namespace ResumeDownload.Core
             _client = new HttpClient();
         }
 
-        public HttpClientRangeResponse DownloadChunk(long start, long length)
+        public async Task<HttpClientRangeResponse> DownloadChunk(long start, long length)
         {
             HttpClientRangeResponse response;
 
@@ -44,12 +45,11 @@ namespace ResumeDownload.Core
             {
                 _client.DefaultRequestHeaders.Range = new RangeHeaderValue(start, start + length - 1);
 
-                var httpResponse = _client.GetAsync(_resumeDlownload.Uri, HttpCompletionOption.ResponseHeadersRead)
-                    .GetAwaiter().GetResult();
+                var httpResponse = await _client.GetAsync(_resumeDlownload.Uri, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
 
                 httpResponse.EnsureSuccessStatusCode();
 
-                stream = httpResponse.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
+                stream = await httpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
                 buffer = _bufferManager.GetBuffer(BUFFER_SIZE);
 
@@ -99,7 +99,7 @@ namespace ResumeDownload.Core
             }
             catch (Exception ex) when (ex is HttpRequestException)
             {
-                _logger.LogError($"workId({_resumeDlownload.Id})-request exception：{ex}");
+                _logger.LogError($"【{_resumeDlownload.Id}】-request exception：{ex}");
                 return null;
             }
             finally
