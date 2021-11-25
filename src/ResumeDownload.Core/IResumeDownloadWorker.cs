@@ -11,11 +11,11 @@ namespace ResumeDownload.Core
         /// 开始下载
         /// </summary>
         /// <param name="url">下载路径</param>
-        /// <param name="outputFilePath">输出路径</param>
         /// <param name="id">文件id</param>
+        /// <param name="outputFilePath">输出路径</param>
         /// <param name="progress">文件id</param>
         /// <returns></returns>
-        Task Start(string url, string outputFilePath = "", string id = "", IAsyncProgress<DownloadProgressChangedEventArgs> progress = null);
+        Task Start(string url, string id, string outputFilePath = "", IAsyncProgress<DownloadProgressChangedEventArgs> progress = null);
         /// <summary>
         /// 暂停下载
         /// </summary>

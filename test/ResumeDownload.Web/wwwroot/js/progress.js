@@ -28,12 +28,15 @@
 
         _hubConnection.on('progress', (data) => {
 
-            $('#progress').attr('aria-valuenow', data.percentage);
-            $('#progress').css('width', data.percentage + '%');
+            var id = data.id.split('.')[0]
 
-            $('#percentage').html(data.percentage + '%');
+            $($(document).find($('#progress' + id))).attr('aria-valuenow', data.percentage);
 
-            $('#size').html('下载速度：' + data.downloadRate + '  ' + data.downloadSize + '/' + data.totalSize);
+            $($(document).find($('#progress' + id))).css('width', data.percentage + '%');
+
+            $($(document).find($('#percentage' + id))).html(data.percentage + '%');
+
+            $($(document).find($('#size' + id))).html('下载速度：' + data.downloadRate + '  ' + data.downloadSize + '/' + data.totalSize);
         });
 
     }

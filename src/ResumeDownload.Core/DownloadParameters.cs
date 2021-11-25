@@ -66,6 +66,16 @@ namespace ResumeDownload.Core
                 throw new ResumeDownloadException("下载地址未提供");
             }
 
+            if (string.IsNullOrEmpty(id))
+            {
+                throw new ResumeDownloadException("文件id未提供");
+            }
+
+            if (id.ToCharArray().Count(i => Path.GetInvalidFileNameChars().Any(ic => ic == i)) > 0)
+            {
+                throw new ResumeDownloadException($"文件名：({id})存在无效字符");
+            }
+
             if (!Uri.TryCreate(url, UriKind.Absolute, out _))
             {
                 throw new ResumeDownloadException($"下载地址“{nameof(url)}”格式不正确");
@@ -124,22 +134,9 @@ namespace ResumeDownload.Core
                 throw new ResumeDownloadException("文件保存地址未提供");
             }
 
-            if (string.IsNullOrEmpty(id))
-            {
-                id = Path.GetFileName(url);
-            }
-            else
-            {
-                id = $"{id}{fileExetionName}";
-            }
-
-            if (id.ToCharArray().Count(i => Path.GetInvalidFileNameChars().Any(ic => ic == i)) > 0)
-            {
-                throw new ResumeDownloadException($"文件名：({id})存在无效字符");
-            }
-
             Id = id;
-            OutputFilePath = $"{absoluteOutputPath.TrimEnd('/')}/{id}";
+
+            OutputFilePath = $"{absoluteOutputPath.TrimEnd('/')}/{Path.GetFileName(url)}{fileExetionName}";
             fileStream = new Lazy<FileStream>(() => CreateOutputStream(OutputFilePath));
             MaxRetries = _options.MaxRetries;
             MaxThreads = _options.MaxThreads ?? 100;

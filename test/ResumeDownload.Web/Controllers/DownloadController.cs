@@ -30,13 +30,13 @@ namespace ResumeDownload.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult Start()
+        public IActionResult Start([FromQuery] string url, [FromQuery] string id)
         {
             var progress = new AsyncProgress<DownloadProgressChangedEventArgs>();
 
             _ = Task.Run(async () =>
             {
-                await _resumeDownload.Start("https://www.hnsdwl.com/mongo.zip", progress: progress);
+                await _resumeDownload.Start(url, id: id, progress: progress);
             });
 
             progress.ProgressChanged += Progress_ProgressChanged;
@@ -49,27 +49,27 @@ namespace ResumeDownload.Web.Controllers
         /// 暂停
         /// </summary>
         [HttpPost]
-        public void Pause()
+        public void Pause([FromQuery] string id)
         {
-            _resumeDownload.Pause("mongo.zip");
+            _resumeDownload.Pause(id);
         }
 
         /// <summary>
         /// 继续
         /// </summary>
         [HttpPost]
-        public void Continue()
+        public void Continue([FromQuery] string id)
         {
-            _resumeDownload.Continue("mongo.zip");
+            _resumeDownload.Continue(id);
         }
 
         /// <summary>
         /// 取消
         /// </summary>
         [HttpPost]
-        public void Cancell()
+        public void Cancell([FromQuery] string id)
         {
-            _resumeDownload.Cancell("mongo.zip");
+            _resumeDownload.Cancell(id);
         }
 
         private void Progress_ProgressChanged(object sender,

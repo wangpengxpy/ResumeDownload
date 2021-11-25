@@ -51,7 +51,7 @@ namespace ResumeDownload.Core
         /// <param name="outputFilePath"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        public Task Start(string url, string outputFilePath = "", string id = "", IAsyncProgress<DownloadProgressChangedEventArgs> progress = null)
+        public Task Start(string url, string id, string outputFilePath = "", IAsyncProgress<DownloadProgressChangedEventArgs> progress = null)
         {
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             var _serviceProvider = scope.ServiceProvider;
