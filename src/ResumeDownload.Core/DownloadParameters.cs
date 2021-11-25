@@ -135,8 +135,7 @@ namespace ResumeDownload.Core
             }
 
             Id = id;
-
-            OutputFilePath = $"{absoluteOutputPath.TrimEnd('/')}/{Path.GetFileName(url)}{fileExetionName}";
+            OutputFilePath = $"{absoluteOutputPath.TrimEnd('/')}/{id}{Path.GetExtension(url)}";
             fileStream = new Lazy<FileStream>(() => CreateOutputStream(OutputFilePath));
             MaxRetries = _options.MaxRetries;
             MaxThreads = _options.MaxThreads ?? 100;
