@@ -18,7 +18,8 @@
 
 <script type="text/javascript">
     // 定义测试文件id
-    var files = [{ 'url': 'https://www.hnsdwl.com/mongo.zip', 'id': '0062A0E4847F438087FA0308729B675C' }, { 'url': 'https://www.hnsdwl.com/ubuntu.iso', 'id': '37484F8E2F504169BA6B224EE2C82467'}]
+    var files = [{ 'url': 'https://www.hnsdwl.com/mongo.zip', 'id': '0062A0E4847F438087FA0308729B675C' }, { 'url': 'https://www.hnsdwl.com/ubuntu.iso', 'id': '37484F8E2F504169BA6B224EE2C82467' },
+        { 'url': 'https://www.hnsdwl.com/jenkins.msi', 'id': '7C74768E893A46BCA85F4E240635337F'}]
     // 下载
     function download(e) {
         $.ajax({
@@ -27,6 +28,9 @@
             cache: false,
             contentType: "application/json"
         });
+        $(e).css('display', 'none');
+        $($(document).find($('#cancell' + $(e).data('id')))).prop('disabled', false);
+        $($(document).find($('#pause' + $(e).data('id')))).prop('disabled', false);
     }
     // 暂停
     function pause(e) {
@@ -36,6 +40,8 @@
             cache: false,
             contentType: "application/json"
         });
+        $(e).prop('disabled', true);
+        $($(document).find($('#continuation' + $(e).data('id')))).prop('disabled', false);
     }
     // 继续
     function continuation(e) {
@@ -45,6 +51,8 @@
             cache: false,
             contentType: "application/json"
         });
+        $(e).prop('disabled', true);
+        $($(document).find($('#pause' + $(e).data('id')))).prop('disabled', false);
     }
     // 取消
     function cancell(id) {
@@ -69,10 +77,10 @@
             html += '</div>'
             html += '<div class="form-group">'
             html +=     '<div class="col-md-offset-2 col-md-10">'
-            html +=         '<input type="button" data-url='+ file.url +' style="margin-right:15px;" data-id=' + file.id + '  onClick="download(this)" value="下载" class="btn btn-success" />'
-            html +=         '<input type="button" data-url='+ file.url+'  style="margin-right:15px;" data-id=' + file.id + '  onClick="pause(this)" value="暂停" class="btn btn-danger" />'
-            html +=         '<input type="button" data-url='+ file.url +' style="margin-right:15px;" data-id=' + file.id + '  onClick="continuation(this)" value="继续" class="btn btn-success" />'
-            html +=         '<input type="button" data-url='+ file.url +' data-id=' + file.id + '  onClick="cancell(this)" value="取消" class="btn btn-danger" />'
+            html +=         '<input type="button"  data-url='+ file.url +' style="margin-right:15px;" data-id=' + file.id + '  onClick="download(this)" value="下载" class="btn btn-success" />'
+            html +=         '<input type="button" id="pause' + file.id + '" data-url=' + file.url +'  style="margin-right:15px;" disabled="true" data-id=' + file.id + '  onClick="pause(this)" value="暂停" class="btn btn-danger" />'
+            html +=         '<input type="button" id="continuation' + file.id + '" data-url=' + file.url +' style="margin-right:15px;" disabled="true" data-id=' + file.id + '  onClick="continuation(this)" value="继续" class="btn btn-success" />'
+            html +=         '<input type="button" id="cancell' + file.id + '" data-url=' + file.url + ' data-id=' + file.id + '  onClick="cancell(this)" value="取消" disabled="true" class="btn btn-danger" />'
             html +=     '</div>'
             html += '</div>'
         }

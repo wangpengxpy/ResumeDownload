@@ -8,9 +8,8 @@ namespace ResumeDownload.Core
         /// <summary>
         /// 分片下载
         /// </summary>
-        /// <param name="start"></param>
-        /// <param name="length"></param>
+        /// <param name="part"></param>
         /// <returns></returns>
-        Task<HttpClientRangeResponse> DownloadChunk(long start, long length);
+        Task<HttpClientRangeResponse> DownloadChunk(DownloadChunkedFilePart part);
     }
 }

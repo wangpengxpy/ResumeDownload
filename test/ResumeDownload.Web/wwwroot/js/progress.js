@@ -28,7 +28,9 @@
 
         _hubConnection.on('progress', (data) => {
 
-            var id = data.id.split('.')[0]
+            console.log(data);
+
+            var id = data.id.split('.')[0];
 
             $($(document).find($('#progress' + id))).attr('aria-valuenow', data.percentage);
 

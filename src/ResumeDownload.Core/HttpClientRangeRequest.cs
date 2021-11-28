@@ -33,7 +33,7 @@ namespace ResumeDownload.Core
             _client = new HttpClient();
         }
 
-        public async Task<HttpClientRangeResponse> DownloadChunk(long start, long length)
+        public async Task<HttpClientRangeResponse> DownloadChunk(DownloadChunkedFilePart part)
         {
             HttpClientRangeResponse response;
 
@@ -43,13 +43,13 @@ namespace ResumeDownload.Core
 
             try
             {
-                _client.DefaultRequestHeaders.Range = new RangeHeaderValue(start, start + length - 1);
+                _client.DefaultRequestHeaders.Range = new RangeHeaderValue(part.FileOffset, part.FileOffset + part.Length - 1);
 
                 var httpResponse = await _client.GetAsync(_resumeDlownload.Uri, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
 
                 httpResponse.EnsureSuccessStatusCode();
 
-                stream = await httpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                stream = httpResponse.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
 
                 buffer = _bufferManager.GetBuffer(BUFFER_SIZE);
 

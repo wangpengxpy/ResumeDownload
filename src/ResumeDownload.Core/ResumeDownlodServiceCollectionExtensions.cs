@@ -21,12 +21,11 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddSingleton<IConfigureOptions<ResumeDownloadOptions>, ResumeDownloadOptionsSetup>();
 
-            services.AddSingleton<BufferManager>();
+            services.AddTransient<BufferManager>();
 
-            services.AddScoped<IDownloadParameters, DownloadParameters>();
-            services.AddScoped<IResumeDlownload, ResumeDlownload>();
-            services.AddTransient<IHttpClientRange>(sp => new HttpClientRangeRequest(sp.GetRequiredService<ILogger<HttpClientRangeRequest>>(), sp.GetRequiredService<IResumeDlownload>()));
-            services.AddScoped<IResumeDownloadWorker, ResumeDownloadWorker>();
+            services.AddTransient<IDownloadParameters, DownloadParameters>();
+            services.AddTransient<IResumeDlownload, ResumeDlownload>();
+            services.AddTransient<IResumeDownloadWorker, ResumeDownloadWorker>();
 
             return services;
         }

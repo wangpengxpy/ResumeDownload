@@ -1,5 +1,4 @@
-﻿using ResumeDownload.Ext;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;

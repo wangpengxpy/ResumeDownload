@@ -3,12 +3,11 @@
   <Import Project="Dependencies.AspNetCore.props" />
 
   <PropertyGroup>
-    <!-- Special case - this property is used by a DotNetCliToolReference -->
     <DotNetXunitVersion>2.3.0</DotNetXunitVersion>
   </PropertyGroup>
 
   <ItemGroup>
-   
+    <PackageManagement Include="Polly" Version="7.2.2" />
   </ItemGroup>
 
 </Project>

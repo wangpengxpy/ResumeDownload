@@ -30,14 +30,11 @@ namespace ResumeDownload.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult Start([FromQuery] string url, [FromQuery] string id)
+        public async Task<IActionResult> Start([FromQuery] string url, [FromQuery] string id)
         {
             var progress = new AsyncProgress<DownloadProgressChangedEventArgs>();
 
-            _ = Task.Run(async () =>
-            {
-                await _resumeDownload.Start(url, id: id, progress: progress);
-            });
+            await _resumeDownload.Start(url, id: id, progress: progress);
 
             progress.ProgressChanged += Progress_ProgressChanged;
 
